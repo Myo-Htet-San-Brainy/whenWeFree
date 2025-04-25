@@ -13,8 +13,6 @@ import { MyEvent } from "./interfaces";
 import { addEvent, deleteEvent, patchEvent } from "./Mock";
 import {
   Drawer,
-  DrawerPortal,
-  DrawerOverlay,
   DrawerTrigger,
   DrawerClose,
   DrawerContent,
@@ -22,9 +20,9 @@ import {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
-  DrawerHandle,
 } from "./components/Drawer";
 import { Button } from "./components/Button";
+import toast from "react-hot-toast";
 
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar<MyEvent>);
@@ -33,6 +31,7 @@ const Page = () => {
   const [events, setEvents] = useState<MyEvent[]>([]);
   const [selectedEv, setSelectedEv] = useState<null | MyEvent>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
+
   const AddEvMutation = useMutation({
     mutationFn: addEvent,
     onMutate: (newEvent) => {
@@ -42,7 +41,9 @@ const Page = () => {
     onError(error, newEvent, context) {
       const newEvents = events.filter((event) => event.id !== newEvent.id);
       setEvents(newEvents);
-      alert(error.message || "default err msg");
+      toast.error(
+        error.message || "Something went wrong while adding the event."
+      );
     },
     onSuccess(data, newEvent, context) {
       const newEvents = events.map((event) => {
@@ -53,7 +54,7 @@ const Page = () => {
         return event;
       });
       setEvents(newEvents);
-      alert("Success!");
+      toast.success("Event added successfully!");
     },
   });
 
@@ -82,10 +83,10 @@ const Page = () => {
         return event;
       });
       setEvents(newEvents);
-      alert(error.message || "default Error");
+      toast.error(error.message || "Failed to update the event.");
     },
     onSuccess(data, variables, context) {
-      alert("Success!");
+      toast.success("Event updated successfully!");
     },
   });
 
@@ -104,10 +105,10 @@ const Page = () => {
     onError(error, variables, context) {
       const newEvents = [...events, context!];
       setEvents(newEvents);
-      alert(error.message || "default Error");
+      toast.error(error.message || "Failed to delete the event.");
     },
     onSuccess(data, variables, context) {
-      alert("Success!");
+      toast.success("Event deleted successfully!");
     },
   });
 
