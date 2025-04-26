@@ -62,3 +62,56 @@ export async function deleteEvent({
     throw new Error("Error!");
   }
 }
+
+export async function fetchInfoEvents({
+  teamId,
+  date,
+}: {
+  teamId: string;
+  date: Date;
+}): Promise<MyEvent[]> {
+  const res = await new Promise<MyEvent[]>((resolve) =>
+    setTimeout(() => resolve(generateFakeEvents(date)), 2000)
+  );
+  return res;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+}
+const teams = [
+  {
+    id: uuidv4(),
+    name: "team A",
+  },
+  {
+    id: uuidv4(),
+    name: "team B",
+  },
+];
+export async function fetchTeamsByUserId(userId: string): Promise<Team[]> {
+  const res = await new Promise<Team[]>((resolve) =>
+    setTimeout(() => resolve(teams), 2000)
+  );
+  return res;
+}
+
+function generateFakeEvents(date: Date): MyEvent[] {
+  const hours = [9, 11, 14, 16]; // 4 events: 9AM, 11AM, 2PM, 4PM
+
+  return hours.map((hour, index) => {
+    const start = new Date(date);
+    start.setHours(hour, 0, 0, 0);
+
+    const end = new Date(date);
+    end.setHours(hour + 1, 0, 0, 0); // each event is 1hr
+
+    return {
+      id: uuidv4(),
+      title: `Event ${index + 1}`,
+      start,
+      end,
+    };
+  });
+}

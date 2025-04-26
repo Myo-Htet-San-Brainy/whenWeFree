@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formSchema } from "../Schemas/Index";
@@ -8,6 +8,7 @@ import { z } from "zod";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 // Infer TypeScript type from schema
 type FormData = z.infer<typeof formSchema>;
@@ -23,21 +24,62 @@ const CreateAccount = () => {
 
   const router = useRouter();
 
+  const { data: session } = useSession();
+  useEffect(() => {
+    if (session) {
+      toast.success(
+        "You will have to sign out first to sign up a new account."
+      );
+      router.push("/viewInfo");
+    }
+  }, [session]);
+
   const onSubmit = async (data: FormData) => {
     try {
-      // 1. Send data to your API (adjust the URL accordingly)
-      const response = await axios.post("/api/register", data); // You might change this endpoint
-
-      // 2. Optional: show a toast, log response, store token, etc.
+      // 1. Try creating account first
+      const response = await axios.post("/api/auth/signUp", data);
+      if (response.status !== 201) {
+        throw new Error("Oops...Something went wrong. Please try again.");
+      }
       console.log("Account created:", response.data);
-      toast.success("Account created");
+      toast.success("Account created 🎉.");
 
-      // 3. Navigate to dashboard
-      router.push("/dashboard");
+      // 2. After creating, auto sign them in
+      await signIn("credentials", {
+        callbackUrl: "/viewInfo",
+        username: data.username,
+        password: data.password,
+      });
     } catch (error: any) {
-      // Handle validation/server/network errors
-      console.error("Registration failed:", error);
-      alert(error?.response?.data?.message || "Something went wrong.");
+      // Check if it's an axios error
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        const errorMsg = error.response?.data?.error || "Something went wrong.";
+
+        if (status === 400) {
+          console.log(errorMsg); // Just console log
+        } else if (status === 409) {
+          toast("Account already exists! Signing you in...");
+
+          await signIn("credentials", {
+            callbackUrl: "/viewInfo",
+            username: data.username,
+            password: data.password,
+          });
+        } else if (status === 500) {
+          toast.error(errorMsg);
+          router.push("/");
+        } else {
+          toast.error("Unexpected error occurred.");
+          router.push("/");
+        }
+      } else {
+        // Not an axios error
+        toast.error(
+          error.message || "Oops...Something went wrong. Please try again."
+        );
+        router.push("/");
+      }
     }
   };
 
@@ -48,19 +90,21 @@ const CreateAccount = () => {
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="mb-4">
           <label
-            htmlFor="name"
+            htmlFor="username"
             className="block text-sm font-medium text-gray-700"
           >
-            Name
+            Username
           </label>
           <input
-            id="name"
+            id="username"
             type="text"
-            {...register("name", { required: "Name is required" })}
-            className="text-black mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            {...register("username")}
+            className="text-black mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
           />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          {errors.username && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.username.message}
+            </p>
           )}
         </div>
 
@@ -74,27 +118,36 @@ const CreateAccount = () => {
           <input
             id="password"
             type="password"
-            {...register("psw", {
-              required: "Password is required",
-              minLength: {
-                value: 6,
-                message: "Password must be at least 6 characters",
-              },
-            })}
-            className="text-black mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            {...register("password")}
+            className="text-black mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
           />
-          {errors.psw && (
-            <p className="mt-1 text-sm text-red-600">{errors.psw.message}</p>
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
         >
           Create Account
         </button>
       </form>
+
+      {/* Add Sign In link */}
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-600">
+          Already have an account?{" "}
+          <button
+            onClick={() => signIn(undefined, { callbackUrl: "/viewInfo" })}
+            className="text-indigo-600 hover:underline"
+          >
+            Sign In
+          </button>
+        </p>
+      </div>
     </div>
   );
 };

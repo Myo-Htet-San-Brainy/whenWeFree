@@ -1,0 +1,66 @@
+"use client";
+import React, { useEffect, useState } from "react";
+import InfoCalendar from "../components/InfoCalendar";
+import { useQuery } from "@tanstack/react-query";
+import { fetchTeamsByUserId, Team } from "../Mock";
+import { useSession, signIn, signOut } from "next-auth/react";
+
+const fakeUserId = "123";
+
+const MainView = () => {
+  const [currTeam, setCurrTeam] = useState<Team | null>(null);
+  const {
+    data: teams,
+    isLoading,
+    isError,
+    isSuccess,
+  } = useQuery({
+    queryKey: ["teams"],
+    queryFn: () => fetchTeamsByUserId(fakeUserId),
+  });
+  console.log("teams", teams);
+
+  useEffect(() => {
+    if (teams !== undefined) {
+      setCurrTeam(teams[0]);
+    }
+  }, [teams]);
+  if (!isError && !teams) {
+    return <p>Loading...</p>;
+  }
+  if (isError) {
+    return <p>Error...</p>;
+  }
+  if (teams.length === 0) {
+    return <p>create or join</p>;
+  }
+  if (currTeam === null) {
+    return <p>...loading</p>;
+  }
+
+  function handleSelectTeam(e: React.ChangeEvent<HTMLSelectElement>) {
+    const newTeamId = e.currentTarget.value;
+    const newTeam = teams?.find((team) => team.id === newTeamId);
+    setCurrTeam(newTeam!);
+  }
+
+  return (
+    <div>
+      <div className="flex justify-end">
+        <select defaultValue={currTeam.id} onChange={handleSelectTeam}>
+          {teams.map((team) => (
+            <option value={team.id} key={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+        <div>
+          <button onClick={() => signOut()}>sign out</button>
+        </div>
+      </div>
+      <InfoCalendar teamId={currTeam.id} />
+    </div>
+  );
+};
+
+export default MainView;
