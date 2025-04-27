@@ -2,7 +2,7 @@ import { getCollection } from "@/lib/mongodb";
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { verifyPassword } from "@/lib/utils";
+import { verifyPassword } from "@/lib/serverUtils";
 
 export async function POST(req: NextRequest) {
   try {

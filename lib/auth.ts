@@ -1,5 +1,7 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
+import type { JWT } from "next-auth/jwt";
+import type { Session, User } from "next-auth";
 
 export const authOptions = {
   providers: [
@@ -21,6 +23,10 @@ export const authOptions = {
 
           if (res.status === 200) {
             const { userId } = res.data;
+            console.log("authorize return", {
+              id: userId,
+              username: credentials?.username,
+            });
             return { id: userId, username: credentials?.username };
           } else {
             throw new Error("Login failed, please try again");
@@ -46,6 +52,38 @@ export const authOptions = {
       },
     }),
   ],
+  callbacks: {
+    async jwt({
+      token,
+      account,
+      profile,
+      user,
+    }: {
+      token: any;
+      account: any;
+      profile: any;
+      user: any;
+    }) {
+      console.log("user in jwt", user);
+
+      console.log("token in jwt", token);
+      console.log("account in jwt", account);
+      console.log("profile in jwt", profile);
+      if (user) {
+        token.username = user.username;
+        token.id = user.id;
+      }
+
+      return token;
+    },
+    async session({ session, token }: { session: Session; token: JWT }) {
+      console.log("token", token);
+      session.user.id = token.id as string;
+      session.user.username = token.username as string;
+      console.log("session cb return", session);
+      return session;
+    },
+  },
   pages: {
     error: "/auth/error", // 👈 tell NextAuth to use your custom error page
   },

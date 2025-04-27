@@ -3,7 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import crypto from "crypto";
-import { hashPassword } from "@/lib/utils";
+import { hashPassword } from "@/lib/serverUtils";
 
 export async function POST(req: NextRequest) {
   try {

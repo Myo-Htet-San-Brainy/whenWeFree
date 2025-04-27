@@ -1,14 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import InfoCalendar from "../components/InfoCalendar";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTeamsByUserId, Team } from "../Mock";
 import { useSession, signIn, signOut } from "next-auth/react";
+import CreateTeamDialog from "./CreateTeamDialog";
 
 const fakeUserId = "123";
 
 const MainView = () => {
   const [currTeam, setCurrTeam] = useState<Team | null>(null);
+  const createTeamTriggerRef = useRef<null | HTMLButtonElement>(null);
   const {
     data: teams,
     isLoading,
@@ -47,6 +49,10 @@ const MainView = () => {
   return (
     <div>
       <div className="flex justify-end">
+        <div>join Team</div>
+        <button onClick={() => createTeamTriggerRef.current?.click()}>
+          create Team
+        </button>
         <select defaultValue={currTeam.id} onChange={handleSelectTeam}>
           {teams.map((team) => (
             <option value={team.id} key={team.id}>
@@ -59,6 +65,8 @@ const MainView = () => {
         </div>
       </div>
       <InfoCalendar teamId={currTeam.id} />
+      {/* Dialogs */}
+      <CreateTeamDialog triggerRef={createTeamTriggerRef} />
     </div>
   );
 };
