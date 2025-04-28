@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createTeam } from "@/app/services/team"; // adjust path if different
 import {
   Dialog,
@@ -28,8 +28,12 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({ triggerRef }) => {
     formState: { errors },
   } = useForm<CreateTeamFormValues>();
 
+  const queryClient = useQueryClient();
   const { mutate, status, data, error, reset } = useMutation({
     mutationFn: createTeam,
+    onSuccess(data, variables, context) {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+    },
   });
 
   const userId = useSession().data?.user.id || "123";

@@ -1,3 +1,4 @@
+import { CustomError } from "@/lib/customError";
 import axios from "axios";
 
 interface CreateTeamParams {
@@ -127,5 +128,41 @@ export async function joinTeam({
     }
 
     throw new Error("Failed to join team. Please try again.");
+  }
+}
+
+interface GetTeamsParams {
+  userId: string;
+}
+
+export async function getTeams({ userId }: GetTeamsParams): Promise<Team[]> {
+  try {
+    console.log("userid in service", userId);
+    const response = await axios.get(`/api/teams?userId=${userId}`);
+
+    if (response.status !== 200) {
+      throw new Error("Failed to fetch teams");
+    }
+
+    const { teams } = response.data;
+    return teams;
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      const status = error.response.status;
+
+      if (status === 401) {
+        throw new Error("You must be logged in to view your teams.");
+      } else if (status === 404) {
+        throw new CustomError("No teams found for your account.", 404);
+      } else if (status === 500) {
+        throw new Error(
+          "Something went wrong on the server. Please try again later."
+        );
+      } else {
+        throw new Error("Unknown error occurred. Please try again later.");
+      }
+    }
+
+    throw new Error("Failed to fetch teams. Please try again.");
   }
 }

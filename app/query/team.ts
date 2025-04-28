@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTeam, joinTeam } from "../services/team";
+import { getTeam, getTeams, joinTeam } from "../services/team";
 import toast from "react-hot-toast";
 
 //will fetch when either joinCode or teamId is truthy
@@ -21,6 +21,15 @@ export const useGetTeam = ({
     queryKey: queryKey,
     queryFn: () => getTeam({ joinCode, teamId }),
     enabled: Boolean(teamId) || Boolean(joinCode) || false,
+  });
+};
+
+export const useGetTeams = ({ userId }: { userId?: string }) => {
+  userId = userId as string;
+  return useQuery({
+    queryKey: ["teams"],
+    queryFn: () => getTeams({ userId }),
+    enabled: Boolean(userId),
   });
 };
 
