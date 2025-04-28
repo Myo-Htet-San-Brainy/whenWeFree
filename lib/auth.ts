@@ -65,22 +65,21 @@ export const authOptions = {
       user: any;
     }) {
       console.log("user in jwt", user);
-
       console.log("token in jwt", token);
-      console.log("account in jwt", account);
-      console.log("profile in jwt", profile);
       if (user) {
         token.username = user.username;
         token.id = user.id;
       }
-
+      console.log("return of jwt", token);
       return token;
     },
     async session({ session, token }: { session: Session; token: JWT }) {
-      console.log("token", token);
+      console.log("token in session", token);
+      console.log("session in session", session);
+
       session.user.id = token.id as string;
       session.user.username = token.username as string;
-      console.log("session cb return", session);
+      console.log("return of session", session);
       return session;
     },
   },

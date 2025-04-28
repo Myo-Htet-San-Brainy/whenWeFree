@@ -12,22 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/app/components/DialogParts";
-import CreateTeamForm from "./CreateTeamForm";
+import CreateTeamForm, { CreateTeamFormValues } from "./CreateTeamForm";
 import { Button } from "@/app/components/Button";
 import Spinner from "@/app/components/Spinner"; // you might need a spinner component, or just make one quickly
 import { useSession } from "next-auth/react";
 
-interface CreateTeamDialogInterface {
+interface CreateTeamDialog {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
 }
 
-export interface CreateTeamFormValues {
-  teamName: string;
-}
-
-const CreateTeamDialog: React.FC<CreateTeamDialogInterface> = ({
-  triggerRef,
-}) => {
+const CreateTeamDialog: React.FC<CreateTeamDialog> = ({ triggerRef }) => {
   const {
     register,
     handleSubmit,
