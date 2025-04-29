@@ -9,6 +9,8 @@ import JoinTeamDialog from "./JoinTeamDialog";
 import { useGetTeams } from "../query/team";
 import { Team } from "../services/team";
 import { CustomError } from "@/lib/customError";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const fakeUserId = "123";
 
@@ -18,6 +20,7 @@ const MainView = () => {
   const joinTeamTriggerRef = useRef<null | HTMLButtonElement>(null);
   const { data: session } = useSession();
   const userId = session?.user.id;
+  const router = useRouter();
 
   const {
     data: teams,
@@ -30,38 +33,56 @@ const MainView = () => {
 
   useEffect(() => {
     if (teams !== undefined) {
-      setCurrTeam(teams[0]);
+      const reversed = [...teams].reverse();
+      setCurrTeam(reversed[0]);
     }
   }, [teams]);
-  if (!isError && !teams) {
-    return <p>Loading...</p>;
-  }
-  if (isError) {
-    if (error instanceof CustomError) {
-      if (error.status === 404) {
-        //implement ui
-        //appropriate title & description 'u don't have any teams joined. create or join a team to get started etc...'
-        return (
-          <div>
-            <button onClick={() => joinTeamTriggerRef.current?.click()}>
-              join Team
-            </button>
-            <button onClick={() => createTeamTriggerRef.current?.click()}>
-              create Team
-            </button>
 
-            {/* Dialogs */}
-            <CreateTeamDialog triggerRef={createTeamTriggerRef} />
-            <JoinTeamDialog triggerRef={joinTeamTriggerRef} />
-          </div>
+  useEffect(() => {
+    if (isError || error) {
+      if (error instanceof CustomError && error.status === 404) {
+        router.push("/createOrJoinATeam");
+      } else {
+        toast.error(
+          "Something goes wrong. Please fill in your free time first."
         );
+        router.push("/fillInData");
       }
     }
-    return <p>{error.message}</p>;
+  }, [isError, error]);
+  if ((!isError && !teams) || isLoading) {
+    return <p>Loading...</p>;
   }
-  if (teams.length === 0) {
-    return <p>create or join</p>;
+  if (isError || error) {
+    //error handling in useFx as it involves navigating
+    return;
   }
+  // if (isError) {
+  //   if (error instanceof CustomError) {
+  //     if (error.status === 404) {
+  //       router.push("/createOrJoinATeam");
+  //       return;
+  //       implement ui
+  //       appropriate title & description 'u don't have any teams joined. create or join a team to get started etc...'
+  //       return (
+  //         <div>
+  //           <button onClick={() => joinTeamTriggerRef.current?.click()}>
+  //             join Team
+  //           </button>
+  //           <button onClick={() => createTeamTriggerRef.current?.click()}>
+  //             create Team
+  //           </button>
+
+  //           {/* Dialogs */}
+  //           <CreateTeamDialog triggerRef={createTeamTriggerRef} />
+  //           <JoinTeamDialog triggerRef={joinTeamTriggerRef} />
+  //         </div>
+  //       );
+  //     }
+  //   }
+  //   //please fill in data first for now...
+  //   return <p>{error.message}</p>;
+  // }
   if (currTeam === null) {
     return <p>...loading</p>;
   }
@@ -82,7 +103,7 @@ const MainView = () => {
           create Team
         </button>
 
-        <select defaultValue={currTeam._id} onChange={handleSelectTeam}>
+        <select value={currTeam._id} onChange={handleSelectTeam}>
           {teams.map((team) => (
             <option value={team._id} key={team._id}>
               {team.teamName}

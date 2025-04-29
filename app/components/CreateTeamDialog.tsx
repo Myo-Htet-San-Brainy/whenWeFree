@@ -19,10 +19,17 @@ import { useSession } from "next-auth/react";
 
 interface CreateTeamDialog {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
+  onSuccessBtnClick?: () => void;
+  onErrorBtnClick?: () => void;
 }
 
-const CreateTeamDialog: React.FC<CreateTeamDialog> = ({ triggerRef }) => {
+const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
+  triggerRef,
+  onSuccessBtnClick,
+  onErrorBtnClick,
+}) => {
   const {
+    reset: resetForm,
     register,
     handleSubmit,
     formState: { errors },
@@ -78,6 +85,8 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({ triggerRef }) => {
           </p>
           <Button
             onClick={() => {
+              onSuccessBtnClick && onSuccessBtnClick();
+              resetForm();
               reset();
               triggerRef.current?.click();
             }}
@@ -97,7 +106,16 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({ triggerRef }) => {
           <p className="text-center text-sm text-gray-500">
             {error?.message || "Something went wrong."}
           </p>
-          <Button onClick={reset}>Ok</Button>
+          <Button
+            onClick={() => {
+              onErrorBtnClick && onErrorBtnClick();
+              resetForm();
+              reset();
+              triggerRef.current?.click();
+            }}
+          >
+            Ok
+          </Button>
         </div>
       );
     }

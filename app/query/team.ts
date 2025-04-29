@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTeam, getTeams, joinTeam } from "../services/team";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { CustomError } from "@/lib/customError";
 
 //will fetch when either joinCode or teamId is truthy
 export const useGetTeam = ({
@@ -25,6 +27,7 @@ export const useGetTeam = ({
 };
 
 export const useGetTeams = ({ userId }: { userId?: string }) => {
+  const router = useRouter();
   userId = userId as string;
   return useQuery({
     queryKey: ["teams"],

@@ -6,9 +6,12 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
 
   // Check if the current path is a protected route
-  const isProtectedRoute = ["/fillInData", "/viewInfo", "/profile"].some(
-    (path) => request.nextUrl.pathname === path
-  );
+  const isProtectedRoute = [
+    "/fillInData",
+    "/viewInfo",
+    "/profile",
+    "/createOrJoinATeam",
+  ].some((path) => request.nextUrl.pathname === path);
 
   // For protected routes: redirect to sign-in if no token
   if (isProtectedRoute && !token) {

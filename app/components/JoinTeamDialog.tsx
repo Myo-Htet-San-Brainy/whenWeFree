@@ -16,9 +16,13 @@ import { useSession } from "next-auth/react";
 
 interface JoinTeamDialog {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
+  onJoinSuccess?: () => void;
 }
 
-const JoinTeamDialog: React.FC<JoinTeamDialog> = ({ triggerRef }) => {
+const JoinTeamDialog: React.FC<JoinTeamDialog> = ({
+  triggerRef,
+  onJoinSuccess,
+}) => {
   const {
     register,
     handleSubmit,
@@ -66,12 +70,17 @@ const JoinTeamDialog: React.FC<JoinTeamDialog> = ({ triggerRef }) => {
           <p className="text-center font-bold text-xl">{data.teamName}</p>
           <Button
             onClick={() => {
-              console.log("Joining team with ID:", data._id);
-              mutate({ teamId: data._id, userId });
+              mutate(
+                { teamId: data._id, userId },
+                {
+                  onSuccess(data, variables, context) {
+                    onJoinSuccess && onJoinSuccess();
+                  },
+                }
+              );
               resetForm();
               setJoinCode(undefined);
               triggerRef.current?.click();
-              // TODO: add actual join mutation here if needed
             }}
           >
             Join

@@ -137,7 +137,6 @@ interface GetTeamsParams {
 
 export async function getTeams({ userId }: GetTeamsParams): Promise<Team[]> {
   try {
-    console.log("userid in service", userId);
     const response = await axios.get(`/api/teams?userId=${userId}`);
 
     if (response.status !== 200) {
