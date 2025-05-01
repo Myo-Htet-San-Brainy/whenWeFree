@@ -4,6 +4,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { clearCollections } from "../services/clearDb";
 
 const Intro = () => {
   const { data: session } = useSession();
@@ -25,6 +26,7 @@ const Intro = () => {
       <p>intro page</p>
       <button onClick={handleSignIn}>Sign In</button>
       <button onClick={handleSignUp}>Sign Up</button>
+      <button onClick={() => clearCollections("nuke")}>clear db</button>
     </div>
   );
 };

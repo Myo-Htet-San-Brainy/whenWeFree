@@ -3,6 +3,7 @@ import { getTeam, getTeams, joinTeam } from "../services/team";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { CustomError } from "@/lib/customError";
+import { createEvent } from "../services/events";
 
 //will fetch when either joinCode or teamId is truthy
 export const useGetTeam = ({

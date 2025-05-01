@@ -29,6 +29,14 @@ import {
 } from "../components/Drawer";
 import { Button } from "../components/Button";
 import toast from "react-hot-toast";
+import {
+  useCreateEventMutation,
+  useDeleteEvent,
+  useGetEvents,
+  usePatchEvent,
+} from "../query/event";
+import { useSession } from "next-auth/react";
+import { CustomError } from "@/lib/customError";
 
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
@@ -39,6 +47,21 @@ const Page = () => {
   const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [view, setView] = useState<View>(Views.WEEK);
   const [date, setDate] = useState(new Date());
+  const { data: session } = useSession();
+  const userId = session?.user.id;
+
+  const { isError, error, data: fetchedEvs } = useGetEvents({ userId });
+  if (isError) {
+    if (error instanceof CustomError && error.status === 404) {
+      console.log("no teams");
+      toast.error("You haven't filled in any free time.");
+    }
+  }
+  useEffect(() => {
+    if (fetchedEvs) {
+      setEvents(fetchedEvs);
+    }
+  }, [fetchedEvs]);
 
   const handleOnChangeView = useCallback(
     (selectedView: View) => {
@@ -54,110 +77,94 @@ const Page = () => {
     [setDate]
   );
 
-  const AddEvMutation = useMutation({
-    mutationFn: addEvent,
-    onMutate: (newEvent) => {
-      setEvents((prev) => [...prev, newEvent]);
-      console.log("onMutate");
-    },
-    onError(error, newEvent, context) {
-      const newEvents = events.filter((event) => event.id !== newEvent.id);
-      setEvents(newEvents);
-      toast.error(
-        error.message || "Something went wrong while adding the event."
-      );
-    },
-    onSuccess(data, newEvent, context) {
-      const newEvents = events.map((event) => {
-        if (event.id === newEvent.id) {
-          event.id = data;
-          return event;
-        }
-        return event;
-      });
-      setEvents(newEvents);
-      toast.success("Event added successfully!");
-    },
-  });
+  const { mutate } = useCreateEventMutation();
 
-  const patchEvMutation = useMutation({
-    mutationFn: patchEvent,
-    onMutate(variables) {
-      const { id, payload } = variables;
-      let orgStart, orgEnd;
-      const newEvents = events.map((event) => {
-        if (event.id === id) {
-          orgStart = event.start;
-          orgEnd = event.end;
-          return { ...event, ...payload };
-        }
-        return event;
-      });
-      setEvents(newEvents);
-      return { orgStart, orgEnd };
-    },
-    onError(error, variables, context) {
-      const { orgStart: start, orgEnd: end } = context!;
-      const newEvents = events.map((event) => {
-        if (event.id === variables.id) {
-          return { ...event, start, end };
-        }
-        return event;
-      });
-      setEvents(newEvents);
-      toast.error(error.message || "Failed to update the event.");
-    },
-    onSuccess(data, variables, context) {
-      toast.success("Event updated successfully!");
-    },
-  });
+  const { mutate: patchEvMutate } = usePatchEvent();
 
-  const deleteEvMutation = useMutation({
-    mutationFn: deleteEvent,
-    onMutate(variables) {
-      const deletedEvent = events.find(
-        (event) => event.id === variables.eventId
-      );
-      const newEvents = events.filter(
-        (event) => event.id !== variables.eventId
-      );
-      setEvents(newEvents);
-      return deletedEvent;
-    },
-    onError(error, variables, context) {
-      const newEvents = [...events, context!];
-      setEvents(newEvents);
-      toast.error(error.message || "Failed to delete the event.");
-    },
-    onSuccess(data, variables, context) {
-      toast.success("Event deleted successfully!");
-    },
-  });
+  const { mutate: deleteEvMutate } = useDeleteEvent();
 
   function handleSelectSlot(data: SlotInfo) {
+    if (!userId) {
+      toast.error("Try again after a moment.");
+      return;
+    }
     const newEvent: MyEvent = {
-      id: uuidv4(),
-      title: "busy",
+      id: uuidv4(), //temp id
+      title: "free",
       start: data.start,
       end: data.end,
     };
+    setEvents((prev) => [...prev, newEvent]);
 
-    AddEvMutation.mutate(newEvent);
+    mutate(
+      { event: newEvent, userId },
+      {
+        onError(error, variables, context) {
+          setEvents((prevEvents) =>
+            prevEvents.filter((event) => event.id !== variables.event.id)
+          );
+          toast.error(
+            error.message || "Something went wrong while adding the event."
+          );
+        },
+        onSuccess(data, variables, context) {
+          setEvents((prevEvents) =>
+            prevEvents.map((event) => {
+              if (event.id === variables.event.id) {
+                return { ...event, id: data };
+              }
+              return event;
+            })
+          );
+          toast.success("Event added successfully!");
+        },
+      }
+    );
   }
-  console.log("events", events);
+  // console.log("events", events);
 
-  function handleEventResize(data: EventInteractionArgs<MyEvent>) {
-    patchEvMutation.mutate({
-      id: data.event.id!,
-      payload: { start: data.start, end: data.end },
+  function handleEventUpdate(data: EventInteractionArgs<MyEvent>) {
+    const eventId = data.event.id!;
+    const payload = { start: data.start as Date, end: data.end as Date };
+    let orgStart: Date, orgEnd: Date;
+    const newEvents = events.map((event) => {
+      if (event.id === eventId) {
+        orgStart = event.start!;
+        orgEnd = event.end!;
+        return { ...event, ...payload };
+      }
+      return event;
     });
-  }
+    setEvents(newEvents);
+    patchEvMutate(
+      {
+        eventId,
+        payload,
+      },
+      {
+        onError(error, variables, context) {
+          if (error instanceof CustomError && error.status === 404) {
+            // Remove the event with id === eventId
+            setEvents((prev) => prev.filter((event) => event.id !== eventId));
+          } else {
+            // Revert changes to original start/end times
+            setEvents((prev) =>
+              prev.map((event) =>
+                event.id === eventId
+                  ? { ...event, start: orgStart, end: orgEnd }
+                  : event
+              )
+            );
+          }
 
-  function handleEventDrop(data: EventInteractionArgs<MyEvent>) {
-    patchEvMutation.mutate({
-      id: data.event.id!,
-      payload: { start: data.start, end: data.end },
-    });
+          toast.error(error.message || "Failed to update the event.");
+        },
+
+        onSuccess(data, variables, context) {
+          toast.success("Event updated successfully!");
+        },
+      }
+    );
   }
 
   function handleSelectEvent(
@@ -174,20 +181,39 @@ const Page = () => {
 
   function handleDelete() {
     drawerTriggerRef.current?.click();
-    deleteEvMutation.mutate({ eventId: selectedEv?.id! });
     setSelectedEv(null);
+
+    const eventId = selectedEv?.id!;
+    const deletedEvent = events.find((event) => event.id === eventId);
+    const newEvents = events.filter((event) => event.id !== eventId);
+    setEvents(newEvents);
+
+    deleteEvMutate(
+      { eventId },
+      {
+        onError(error, variables, context) {
+          if (error instanceof CustomError && error.status === 404) return;
+
+          setEvents((prev) => [...prev, deletedEvent!]);
+          toast.error(error.message || "Failed to delete the event.");
+        },
+        onSuccess() {
+          toast.success("Event deleted successfully!");
+        },
+      }
+    );
   }
 
   return (
     <div>
       <DnDCalendar
-        events={events}
+        events={events.length <= 0 ? undefined : events}
         selectable
         localizer={localizer}
         style={{ height: "100vh" }}
         // defaultView="week"
-        onEventResize={handleEventResize}
-        onEventDrop={handleEventDrop}
+        onEventResize={handleEventUpdate}
+        onEventDrop={handleEventUpdate}
         onSelectSlot={handleSelectSlot}
         onSelectEvent={handleSelectEvent}
         // toolbar={false}
