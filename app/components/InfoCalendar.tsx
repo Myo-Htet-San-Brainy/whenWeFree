@@ -22,6 +22,7 @@ interface InfoCalendarProps {
 }
 const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
   const [date, setDate] = useState<Date>(new Date());
+  const [view, SetView] = useState<View>(Views.WEEK);
   const { setTeamMembers } = useTeamMembersStore();
 
   const onNavigate = useCallback(
@@ -30,6 +31,13 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
     },
     [setDate]
   );
+  const onView = useCallback(
+    (newView: View) => {
+      return SetView(newView);
+    },
+    [SetView]
+  );
+
   const { data, isError } = useGetInfoEvents({ teamId });
 
   useEffect(() => {
@@ -58,7 +66,8 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
         className="h-dvh"
         localizer={localizer}
         events={events}
-        view={Views.DAY}
+        view={view}
+        onView={onView}
         date={date}
         onNavigate={onNavigate}
         components={{
