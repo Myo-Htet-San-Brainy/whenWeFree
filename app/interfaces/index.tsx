@@ -21,4 +21,5 @@ export interface InfoEvent {
   start: Date;
   end: Date;
   freeMembers: string[];
+  availabilityRatio: number;
 }

@@ -90,32 +90,35 @@ export async function GET(req: NextRequest) {
     // Access User collection to verify each member exists
     const userCollection = await getCollection("User");
     const existingUsers = [];
+    const existingUserIds = [];
 
     // Check if each user exists
     for (const memberId of team.members) {
-      const user = await userCollection.findOne({
-        _id: new ObjectId(memberId),
-      });
+      const user = await userCollection.findOne(
+        { _id: new ObjectId(memberId) },
+        { projection: { _id: 1, username: 1 } }
+      );
       if (user) {
-        existingUsers.push(memberId);
+        existingUserIds.push(memberId);
+        existingUsers.push(user);
       }
     }
 
     // If some users don't exist, update the team's members array
-    if (existingUsers.length !== team.members.length) {
+    if (existingUserIds.length !== team.members.length) {
       await teamCollection.updateOne(
         { _id: new ObjectId(teamId) },
-        { $set: { members: existingUsers } }
+        { $set: { members: existingUserIds } }
       );
 
       // If all users were removed, delete the team and return 404
-      if (existingUsers.length === 0) {
+      if (existingUserIds.length === 0) {
         await teamCollection.deleteOne({ _id: new ObjectId(teamId) });
         return NextResponse.json({ error: "Team not exist" }, { status: 404 });
       }
 
       // Update the members array for further processing
-      team.members = existingUsers;
+      team.members = existingUserIds;
     }
 
     // Access Event collection
@@ -148,20 +151,15 @@ export async function GET(req: NextRequest) {
     }
 
     // Return all events
-    const infoEvents = transformEventsToInfoEvents(allEvents);
-
-    const teamMembers = await Promise.all(
-      existingUsers.map(async (userId) => {
-        const user = await userCollection.findOne(
-          { _id: new ObjectId(userId) },
-          { projection: { _id: 1, username: 1 } }
-        );
-
-        if (!user) throw new Error(`User with ID ${userId} not found`);
-        return user;
-      })
+    const infoEvents = transformEventsToInfoEvents(
+      allEvents,
+      existingUserIds.length
     );
-    return NextResponse.json({ infoEvents, teamMembers }, { status: 200 });
+
+    return NextResponse.json(
+      { infoEvents, teamMembers: existingUsers },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Get team events error:", error);
     return NextResponse.json(

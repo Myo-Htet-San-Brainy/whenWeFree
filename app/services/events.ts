@@ -188,6 +188,7 @@ export async function getInfoEvents(
       const { start, end, ...rest } = event;
       return {
         ...rest,
+        id: uuidv4(),
         start: new Date(start),
         end: new Date(end),
       };

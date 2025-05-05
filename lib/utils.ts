@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function transformEventsToInfoEvents(events: DBMyEvent[]): InfoEvent[] {
+export function transformEventsToInfoEvents(
+  events: DBMyEvent[],
+  noOfAllMembers: number
+): InfoEvent[] {
   if (events.length === 0) return [];
 
   // Convert string dates to Date objects for easier manipulation
@@ -60,6 +63,7 @@ export function transformEventsToInfoEvents(events: DBMyEvent[]): InfoEvent[] {
         start: currentStart,
         end: currentEnd,
         freeMembers: uniqueFreeMembers as string[],
+        availabilityRatio: uniqueFreeMembers.length / noOfAllMembers,
       });
     }
   }

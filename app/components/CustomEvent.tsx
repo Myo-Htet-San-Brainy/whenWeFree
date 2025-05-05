@@ -2,6 +2,7 @@
 import { EventProps } from "react-big-calendar";
 import { InfoEvent, MyEvent } from "../interfaces";
 import { useTeamMembersStore } from "../store/teams";
+import { v4 as uuidv4 } from "uuid";
 
 // export interface CustomEventProps
 //EventProps<MyEvent>
@@ -24,7 +25,7 @@ const CustomEvent: React.FC<EventProps<InfoEvent>> = ({ event }) => {
         const pre =
           index === 0 ? false : index === freeMemberNo - 1 ? ", and " : ", ";
         return (
-          <i key={member?._id} className="">
+          <i key={uuidv4()} className="">
             {pre}
             {member?.username}
             {index === freeMemberNo - 1 &&

@@ -7,6 +7,7 @@ import {
   Views,
 } from "react-big-calendar";
 import moment from "moment";
+import { v4 as uuidv4 } from "uuid";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { MyEvent } from "../interfaces";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +51,6 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
     }
   }, [data]);
 
-  console.log("info events", data?.infoEvents);
   if (!isError && !data) {
     return <p>Loading...</p>;
   }
@@ -58,7 +58,7 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
     return <p>Error...</p>;
   }
   const events = data.infoEvents.length <= 0 ? undefined : data.infoEvents;
-  console.log("what passed into evnts", events);
+  console.log("what passed into events", events);
 
   return (
     <div>
@@ -70,8 +70,33 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
         onView={onView}
         date={date}
         onNavigate={onNavigate}
-        components={{
-          event: CustomEvent,
+        eventPropGetter={(ev) => {
+          let bgColor;
+          if (ev.availabilityRatio === 1) {
+            bgColor = "#4CAF50"; // All free
+          } else if (ev.availabilityRatio >= 0.5) {
+            bgColor = "#FFC107"; // Half or more free
+          } else {
+            bgColor = "#F44336"; // Less than half free
+          }
+
+          return {
+            style: {
+              backgroundColor: bgColor,
+            },
+          };
+        }}
+        tooltipAccessor={(ev) => {
+          const { freeMembers: freeMemberIds } = ev;
+          const teamMembers = data?.teamMembers;
+
+          let freeMemberNames: string | (string | undefined)[];
+          freeMemberNames = freeMemberIds.map((freeMemberId) => {
+            const member = teamMembers?.find((val) => val._id === freeMemberId);
+            return member?.username;
+          });
+          freeMemberNames = freeMemberNames.join(",");
+          return freeMemberNames;
         }}
       />
     </div>
