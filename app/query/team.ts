@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTeam, getTeams, joinTeam } from "../services/team";
+import { createTeam, getTeam, getTeams, joinTeam } from "../services/team";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { CustomError } from "@/lib/customError";
@@ -52,6 +52,17 @@ export const useJoinTeamMutation = () => {
     },
     onError(error: any, variables, context) {
       toast.error(error.message, { id: "join-toast-id" });
+    },
+  });
+};
+
+export const useCreateTeamMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createTeam,
+    onSuccess(data, variables, context) {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
     },
   });
 };

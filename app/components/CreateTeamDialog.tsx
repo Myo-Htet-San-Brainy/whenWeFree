@@ -16,6 +16,8 @@ import CreateTeamForm, { CreateTeamFormValues } from "./CreateTeamForm";
 import { Button } from "@/app/components/Button";
 import Spinner from "@/app/components/Spinner"; // you might need a spinner component, or just make one quickly
 import { useSession } from "next-auth/react";
+import toast from "react-hot-toast";
+import { useCreateTeamMutation } from "../query/team";
 
 interface CreateTeamDialog {
   triggerRef: React.RefObject<HTMLButtonElement | null>;
@@ -35,17 +37,15 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
     formState: { errors },
   } = useForm<CreateTeamFormValues>();
 
-  const queryClient = useQueryClient();
-  const { mutate, status, data, error, reset } = useMutation({
-    mutationFn: createTeam,
-    onSuccess(data, variables, context) {
-      queryClient.invalidateQueries({ queryKey: ["teams"] });
-    },
-  });
-
-  const userId = useSession().data?.user.id || "123";
+  const { mutate, status, data, error, reset } = useCreateTeamMutation();
+  const userId = useSession().data?.user.id;
 
   const onSubmit = (formData: CreateTeamFormValues) => {
+    if (!userId) {
+      toast.error("Please try again after a moment.");
+      triggerRef.current?.click();
+      return;
+    }
     mutate({ userId: userId, teamName: formData.teamName });
   };
 

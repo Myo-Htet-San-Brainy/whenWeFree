@@ -12,8 +12,6 @@ import { CustomError } from "@/lib/customError";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-const fakeUserId = "123";
-
 const MainView = () => {
   const [currTeam, setCurrTeam] = useState<Team | null>(null);
   const createTeamTriggerRef = useRef<null | HTMLButtonElement>(null);
@@ -50,7 +48,7 @@ const MainView = () => {
       }
     }
   }, [isError, error]);
-  if ((!isError && !teams) || isLoading) {
+  if ((!isError && !teams) || isLoading || currTeam === null) {
     return <p>Loading...</p>;
   }
   if (isError || error) {
@@ -83,9 +81,6 @@ const MainView = () => {
   //   //please fill in data first for now...
   //   return <p>{error.message}</p>;
   // }
-  if (currTeam === null) {
-    return <p>...loading</p>;
-  }
 
   function handleSelectTeam(e: React.ChangeEvent<HTMLSelectElement>) {
     const newTeamId = e.currentTarget.value;

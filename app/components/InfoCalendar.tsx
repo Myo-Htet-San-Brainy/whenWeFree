@@ -17,6 +17,7 @@ import { useGetInfoEvents } from "../query/event";
 import toast from "react-hot-toast";
 import CustomEvent from "./CustomEvent";
 import { useTeamMembersStore } from "../store/teams";
+import Link from "next/link";
 const localizer = momentLocalizer(moment);
 interface InfoCalendarProps {
   teamId: string;
@@ -39,24 +40,37 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
     [SetView]
   );
 
-  const { data, isError } = useGetInfoEvents({ teamId });
+  const { data, isError, isLoading } = useGetInfoEvents({ teamId });
 
   useEffect(() => {
     if (data) {
       if (data.infoEvents.length <= 0) {
         toast.error("Members haven't filled their free time yet");
       } else {
+        //server includes 'teamMembers' only when infoEvents.length is > 0
         setTeamMembers(data.teamMembers);
       }
     }
   }, [data]);
 
-  if (!isError && !data) {
+  if ((!isError && !data) || isLoading) {
     return <p>Loading...</p>;
   }
   if (isError) {
-    return <p>Error...</p>;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50 text-gray-700 text-center px-4">
+        <h2 className="text-2xl font-semibold mb-4">
+          Oops! Something went wrong.
+        </h2>
+        <p className="mb-1 text-lg">Check out another team's free time</p>
+        <p className="mb-1 text-gray-500">or</p>
+        <Link href={"/fillInData"} className="text-lg">
+          Fill in your free time first
+        </Link>
+      </div>
+    );
   }
+
   const events = data.infoEvents.length <= 0 ? undefined : data.infoEvents;
   console.log("what passed into events", events);
 
