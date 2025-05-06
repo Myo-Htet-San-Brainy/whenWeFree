@@ -50,18 +50,24 @@ const Page = () => {
   const { data: session } = useSession();
   const userId = session?.user.id;
 
-  const { isError, error, data: fetchedEvs } = useGetEvents({ userId });
-  if (isError) {
-    if (error instanceof CustomError && error.status === 404) {
-      console.log("no teams");
-      toast.error("You haven't filled in any free time.");
-    }
-  }
+  const {
+    isError,
+    error,
+    data: fetchedEvs,
+    isLoading,
+  } = useGetEvents({ userId });
+
   useEffect(() => {
     if (fetchedEvs) {
       setEvents(fetchedEvs);
     }
-  }, [fetchedEvs]);
+    if (isError) {
+      if (error instanceof CustomError && error.status === 404) {
+        console.log("no events");
+        toast.error("You haven't filled in any free time yet.");
+      }
+    }
+  }, [fetchedEvs, isError]);
 
   const handleOnChangeView = useCallback(
     (selectedView: View) => {
@@ -121,7 +127,6 @@ const Page = () => {
       }
     );
   }
-  // console.log("events", events);
 
   function handleEventUpdate(data: EventInteractionArgs<MyEvent>) {
     const eventId = data.event.id!;
@@ -173,7 +178,7 @@ const Page = () => {
   ) {
     //show panel
     if (!drawerTriggerRef.current) {
-      alert("Please try again later");
+      toast.error("Please try again later");
     }
     setSelectedEv(event);
     drawerTriggerRef.current?.click();
@@ -202,6 +207,16 @@ const Page = () => {
         },
       }
     );
+  }
+
+  if ((!isError && !fetchedEvs) || isLoading) {
+    return <div>loading...</div>;
+  }
+
+  if (isError) {
+    if (!(error instanceof CustomError && error.status === 404)) {
+      return <div>error...</div>;
+    }
   }
 
   return (

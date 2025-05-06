@@ -28,7 +28,6 @@ export const useGetTeam = ({
 };
 
 export const useGetTeams = ({ userId }: { userId?: string }) => {
-  const router = useRouter();
   userId = userId as string;
   return useQuery({
     queryKey: ["teams"],
@@ -40,9 +39,8 @@ export const useGetTeams = ({ userId }: { userId?: string }) => {
 export const useJoinTeamMutation = () => {
   const queryClient = useQueryClient(); // ✨ get query client
 
-  const joinTeamPromise = joinTeam;
   return useMutation({
-    mutationFn: joinTeamPromise,
+    mutationFn: joinTeam,
     onMutate(variables) {
       toast.loading("Joining...", { id: "join-toast-id" });
     },

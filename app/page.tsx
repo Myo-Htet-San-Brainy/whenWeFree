@@ -9,9 +9,3 @@ const page = () => {
 };
 
 export default page;
-
-//day view
-//fetch on mount
-//day  + teamId
-//get ' ',
-//
