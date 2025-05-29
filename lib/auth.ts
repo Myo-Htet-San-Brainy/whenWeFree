@@ -14,7 +14,7 @@ export const authOptions = {
       async authorize(credentials, req) {
         try {
           const res = await axios.post(
-            "http://localhost:3000/api/auth/signIn",
+            "https://when-we-free-gp4d.vercel.app/api/auth/signIn",
             {
               username: credentials?.username,
               password: credentials?.password,
