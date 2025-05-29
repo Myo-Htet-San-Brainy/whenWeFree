@@ -60,9 +60,9 @@ export const authOptions = {
       user,
     }: {
       token: any;
-      account: any;
-      profile: any;
-      user: any;
+      account?: any;
+      profile?: any;
+      user?: any;
     }) {
       console.log("user in jwt", user);
       console.log("token in jwt", token);
