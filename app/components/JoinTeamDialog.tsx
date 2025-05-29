@@ -13,16 +13,13 @@ import Spinner from "@/app/components/Spinner";
 import { useState } from "react";
 import FindTeamForm, { FindTeamFormValues } from "./FindTeamForm";
 import { useSession } from "next-auth/react";
+import { useDialogsStore } from "../store/dialogs";
 
 interface JoinTeamDialog {
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
   onJoinSuccess?: () => void;
 }
 
-const JoinTeamDialog: React.FC<JoinTeamDialog> = ({
-  triggerRef,
-  onJoinSuccess,
-}) => {
+const JoinTeamDialog: React.FC<JoinTeamDialog> = ({ onJoinSuccess }) => {
   const {
     register,
     handleSubmit,
@@ -30,6 +27,7 @@ const JoinTeamDialog: React.FC<JoinTeamDialog> = ({
     formState: { errors },
   } = useForm<FindTeamFormValues>();
   const [joinCode, setJoinCode] = useState<undefined | string>(undefined);
+  const { isOpenJoinTeamDialog, setIsOpenJoinTeamDialog } = useDialogsStore();
 
   const { status, data, error } = useGetTeam({ joinCode });
   const { mutate } = useJoinTeamMutation();
@@ -80,7 +78,7 @@ const JoinTeamDialog: React.FC<JoinTeamDialog> = ({
               );
               resetForm();
               setJoinCode(undefined);
-              triggerRef.current?.click();
+              setIsOpenJoinTeamDialog(false);
             }}
           >
             Join
@@ -90,7 +88,7 @@ const JoinTeamDialog: React.FC<JoinTeamDialog> = ({
             onClick={() => {
               resetForm();
               setJoinCode(undefined);
-              triggerRef.current?.click();
+              setIsOpenJoinTeamDialog(false);
             }}
           >
             Cancel
@@ -123,8 +121,10 @@ const JoinTeamDialog: React.FC<JoinTeamDialog> = ({
 
   return (
     <div>
-      <Dialog defaultOpen={false}>
-        <DialogTrigger className="hidden" ref={triggerRef} />
+      <Dialog
+        open={isOpenJoinTeamDialog}
+        onOpenChange={(newState) => setIsOpenJoinTeamDialog(newState)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           {renderContent()}
         </DialogContent>

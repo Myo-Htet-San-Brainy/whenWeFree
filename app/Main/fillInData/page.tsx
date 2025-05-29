@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import {
   Calendar,
@@ -14,29 +14,20 @@ import withDragAndDrop, {
   EventInteractionArgs,
 } from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-import { useMutation } from "@tanstack/react-query";
-import { MyEvent } from "../interfaces";
-import { addEvent, deleteEvent, patchEvent } from "../Mock";
-import {
-  Drawer,
-  DrawerTrigger,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerFooter,
-  DrawerTitle,
-  DrawerDescription,
-} from "../components/Drawer";
-import { Button } from "../components/Button";
+
+import { MyEvent } from "../../interfaces";
+
 import toast from "react-hot-toast";
 import {
   useCreateEventMutation,
-  useDeleteEvent,
   useGetEvents,
   usePatchEvent,
-} from "../query/event";
+} from "../../query/event";
 import { useSession } from "next-auth/react";
 import { CustomError } from "@/lib/customError";
+import { useDialogsStore } from "@/app/store/dialogs";
+import EventDetailsDrawer from "@/app/components/EventDetailsDrawer";
+import LoadingSpinner from "@/app/components/LoadingSpinner";
 
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
@@ -44,30 +35,13 @@ const DnDCalendar = withDragAndDrop(Calendar);
 const Page = () => {
   const [events, setEvents] = useState<MyEvent[]>([]);
   const [selectedEv, setSelectedEv] = useState<null | MyEvent>(null);
-  const drawerTriggerRef = useRef<HTMLButtonElement | null>(null);
+
   const [view, setView] = useState<View>(Views.WEEK);
   const [date, setDate] = useState(new Date());
   const { data: session } = useSession();
   const userId = session?.user.id;
 
-  const {
-    isError,
-    error,
-    data: fetchedEvs,
-    isLoading,
-  } = useGetEvents({ userId });
-
-  useEffect(() => {
-    if (fetchedEvs) {
-      setEvents(fetchedEvs);
-    }
-    if (isError) {
-      if (error instanceof CustomError && error.status === 404) {
-        console.log("no events");
-        toast.error("You haven't filled in any free time yet.");
-      }
-    }
-  }, [fetchedEvs, isError]);
+  const { setIsOpenEventDetailsDrawer } = useDialogsStore();
 
   const handleOnChangeView = useCallback(
     (selectedView: View) => {
@@ -83,11 +57,28 @@ const Page = () => {
     [setDate]
   );
 
+  const {
+    isError,
+    error,
+    data: fetchedEvs,
+    isLoading,
+  } = useGetEvents({ userId });
+
+  useEffect(() => {
+    if (fetchedEvs) {
+      setEvents(fetchedEvs);
+    }
+    if (isError) {
+      if (error instanceof CustomError && error.status === 404) {
+        console.log("no events");
+        toast.error("No free time added yet.");
+      }
+    }
+  }, [fetchedEvs, isError]);
+
   const { mutate } = useCreateEventMutation();
 
   const { mutate: patchEvMutate } = usePatchEvent();
-
-  const { mutate: deleteEvMutate } = useDeleteEvent();
 
   function handleSelectSlot(data: SlotInfo) {
     if (!userId) {
@@ -176,41 +167,12 @@ const Page = () => {
     event: MyEvent,
     e: React.SyntheticEvent<HTMLElement>
   ) {
-    //show panel
-    if (!drawerTriggerRef.current) {
-      toast.error("Please try again later");
-    }
     setSelectedEv(event);
-    drawerTriggerRef.current?.click();
-  }
-
-  function handleDelete() {
-    drawerTriggerRef.current?.click();
-    setSelectedEv(null);
-
-    const eventId = selectedEv?.id!;
-    const deletedEvent = events.find((event) => event.id === eventId);
-    const newEvents = events.filter((event) => event.id !== eventId);
-    setEvents(newEvents);
-
-    deleteEvMutate(
-      { eventId },
-      {
-        onError(error, variables, context) {
-          if (error instanceof CustomError && error.status === 404) return;
-
-          setEvents((prev) => [...prev, deletedEvent!]);
-          toast.error(error.message || "Failed to delete the event.");
-        },
-        onSuccess() {
-          toast.success("Event deleted successfully!");
-        },
-      }
-    );
+    setIsOpenEventDetailsDrawer(true);
   }
 
   if ((!isError && !fetchedEvs) || isLoading) {
-    return <div>loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (isError) {
@@ -239,34 +201,12 @@ const Page = () => {
 
         // selected={selectedEv}
       />
-      <Drawer direction="left">
-        <DrawerTrigger ref={drawerTriggerRef} className="hidden" />
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{selectedEv?.title || "Event Details"}</DrawerTitle>
-            <DrawerDescription>
-              {selectedEv && (
-                <div>
-                  <p>
-                    <strong>Start:</strong>{" "}
-                    {moment(selectedEv.start).format("LLL")}
-                  </p>
-                  <p>
-                    <strong>End:</strong> {moment(selectedEv.end).format("LLL")}
-                  </p>
-                  {/* Add more event details as needed */}
-                </div>
-              )}
-            </DrawerDescription>
-          </DrawerHeader>
-          <DrawerFooter>
-            <Button onClick={handleDelete}>Delete</Button>
-            <DrawerClose>
-              <Button variant="outline">Cancel</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+      <EventDetailsDrawer
+        selectedEv={selectedEv}
+        setSelectedEv={setSelectedEv}
+        events={events}
+        setEvents={setEvents}
+      />
     </div>
   );
 };

@@ -85,6 +85,7 @@ export const authOptions = {
   },
   pages: {
     error: "/auth/error", // 👈 tell NextAuth to use your custom error page
+    signIn: "/auth/credentials-signin",
   },
 };
 

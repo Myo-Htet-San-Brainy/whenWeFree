@@ -1,23 +1,17 @@
 "use client";
-import {
-  Calendar,
-  SlotInfo,
-  momentLocalizer,
-  View,
-  Views,
-} from "react-big-calendar";
+import { Calendar, momentLocalizer, View, Views } from "react-big-calendar";
 import moment from "moment";
-import { v4 as uuidv4 } from "uuid";
+
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { MyEvent } from "../interfaces";
-import { useQuery } from "@tanstack/react-query";
+
 import { useCallback, useEffect, useState } from "react";
-import { fetchInfoEvents } from "../Mock";
+
 import { useGetInfoEvents } from "../query/event";
 import toast from "react-hot-toast";
-import CustomEvent from "./CustomEvent";
+
 import { useTeamMembersStore } from "../store/teams";
 import Link from "next/link";
+import LoadingSpinner from "./LoadingSpinner";
 const localizer = momentLocalizer(moment);
 interface InfoCalendarProps {
   teamId: string;
@@ -44,17 +38,16 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
 
   useEffect(() => {
     if (data) {
+      setTeamMembers(data.teamMembers);
       if (data.infoEvents.length <= 0) {
-        toast.error("Members haven't filled their free time yet");
-      } else {
-        //server includes 'teamMembers' only when infoEvents.length is > 0
-        setTeamMembers(data.teamMembers);
+        //this is misleading
+        toast.error("No free time added by team members.");
       }
     }
   }, [data]);
 
   if ((!isError && !data) || isLoading) {
-    return <p>Loading...</p>;
+    return <LoadingSpinner top="60%" left="50%" />;
   }
   if (isError) {
     return (
@@ -62,10 +55,10 @@ const InfoCalendar: React.FC<InfoCalendarProps> = ({ teamId }) => {
         <h2 className="text-2xl font-semibold mb-4">
           Oops! Something went wrong.
         </h2>
-        <p className="mb-1 text-lg">Check out another team's free time</p>
+        <p className="mb-1 text-lg">Check out another team</p>
         <p className="mb-1 text-gray-500">or</p>
-        <Link href={"/fillInData"} className="text-lg">
-          Fill in your free time first
+        <Link href={"/Main/fillInData"} className="text-lg">
+          Add your free time first
         </Link>
       </div>
     );

@@ -90,30 +90,33 @@ export async function getTeam({
   }
 }
 
-interface JoinTeamParams {
+interface PatchTeamParams {
   teamId: string;
   userId: string;
+  action: string;
 }
 
-export async function joinTeam({
+export async function patchTeam({
   teamId,
   userId,
-}: JoinTeamParams): Promise<void> {
+  action,
+}: PatchTeamParams): Promise<void> {
   try {
     const response = await axios.patch("/api/teams/team", {
       teamId,
       userId,
+      action,
     });
 
     if (response.status !== 200) {
-      throw new Error("Failed to join team");
+      throw new Error("Failed to update team");
     }
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
       const status = error.response.status;
 
       if (status === 401) {
-        throw new Error("You must be logged in to join a team.");
+        throw new Error("You must be logged in to update a team.");
       } else if (status === 404) {
         throw new Error("Team not found.");
       } else if (status === 400) {
@@ -127,7 +130,7 @@ export async function joinTeam({
       }
     }
 
-    throw new Error("Failed to join team. Please try again.");
+    throw new Error("Failed to update team. Please try again.");
   }
 }
 
@@ -151,8 +154,6 @@ export async function getTeams({ userId }: GetTeamsParams): Promise<Team[]> {
 
       if (status === 401) {
         throw new Error("You must be logged in to view your teams.");
-      } else if (status === 404) {
-        throw new CustomError("No teams found for your account.", 404);
       } else if (status === 500) {
         throw new Error(
           "Something went wrong on the server. Please try again later."

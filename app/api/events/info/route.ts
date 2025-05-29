@@ -147,7 +147,10 @@ export async function GET(req: NextRequest) {
 
     // Check if any events were found
     if (allEvents.length === 0) {
-      return NextResponse.json({ infoEvents: [] }, { status: 200 });
+      return NextResponse.json(
+        { infoEvents: [], teamMembers: existingUsers },
+        { status: 200 }
+      );
     }
 
     // Return all events

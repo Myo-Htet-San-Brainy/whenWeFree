@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { Team } from "../services/team";
 
 export interface TeamMember {
   _id: string;
@@ -15,6 +16,20 @@ export const useTeamMembersStore = create<TeamMembersStore>()((set) => ({
   setTeamMembers: (newState) => {
     set((prev) => {
       return { ...prev, teamMembers: newState };
+    });
+  },
+}));
+
+interface CurrentTeamStore {
+  currentTeam: null | Team;
+  setCurrentTeam: (newState: Team) => void;
+}
+
+export const useCurrentTeamStore = create<CurrentTeamStore>()((set) => ({
+  currentTeam: null,
+  setCurrentTeam: (newState) => {
+    set((prev) => {
+      return { ...prev, currentTeam: newState };
     });
   },
 }));

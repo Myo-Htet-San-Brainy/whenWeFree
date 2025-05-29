@@ -46,7 +46,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { teamId, userId } = await req.json();
+    const { teamId, userId, action } = await req.json();
 
     const teamCollection = await getCollection("Team");
 
@@ -57,34 +57,42 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Team not found" }, { status: 404 });
     }
 
-    // check if user is already a member
-    if (team.members.includes(userId)) {
-      return NextResponse.json(
-        { error: "Already joined this team" },
-        { status: 400 }
-      );
-      // 400 (Bad Request) is more semantically correct here than 404
-    }
+    let updateResult;
+    if (action === "join") {
+      // check if user is already a member
+      if (team.members.includes(userId)) {
+        return NextResponse.json(
+          { error: "Already joined this team" },
+          { status: 400 }
+        );
+        // 400 (Bad Request) is more semantically correct here than 404
+      }
 
-    // add userId to members array
-    const updateResult = await teamCollection.updateOne(
-      { _id: new ObjectId(teamId) },
-      { $push: { members: userId } }
-    );
+      // add userId to members array
+      updateResult = await teamCollection.updateOne(
+        { _id: new ObjectId(teamId) },
+        { $push: { members: userId } }
+      );
+    } else {
+      updateResult = await teamCollection.updateOne(
+        { _id: new ObjectId(teamId) },
+        { $pull: { members: userId } }
+      );
+    }
 
     if (!updateResult.acknowledged) {
       return NextResponse.json(
-        { error: "Failed to join team" },
+        { error: "Failed to update team" },
         { status: 500 }
       );
     }
 
     return NextResponse.json(
-      { message: "Joined team successfully" },
+      { message: "Updated team successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Join team error:", error);
+    console.error("Update team error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

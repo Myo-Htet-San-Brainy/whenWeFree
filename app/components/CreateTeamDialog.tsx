@@ -18,15 +18,14 @@ import Spinner from "@/app/components/Spinner"; // you might need a spinner comp
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { useCreateTeamMutation } from "../query/team";
+import { useDialogsStore } from "../store/dialogs";
 
 interface CreateTeamDialog {
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
   onSuccessBtnClick?: () => void;
   onErrorBtnClick?: () => void;
 }
 
 const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
-  triggerRef,
   onSuccessBtnClick,
   onErrorBtnClick,
 }) => {
@@ -36,6 +35,8 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
     handleSubmit,
     formState: { errors },
   } = useForm<CreateTeamFormValues>();
+  const { isOpenCreateTeamDialog, setIsOpenCreateTeamDialog } =
+    useDialogsStore();
 
   const { mutate, status, data, error, reset } = useCreateTeamMutation();
   const userId = useSession().data?.user.id;
@@ -43,7 +44,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
   const onSubmit = (formData: CreateTeamFormValues) => {
     if (!userId) {
       toast.error("Please try again after a moment.");
-      triggerRef.current?.click();
+      setIsOpenCreateTeamDialog(false);
       return;
     }
     mutate({ userId: userId, teamName: formData.teamName });
@@ -88,7 +89,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
               onSuccessBtnClick && onSuccessBtnClick();
               resetForm();
               reset();
-              triggerRef.current?.click();
+              setIsOpenCreateTeamDialog(false);
             }}
           >
             Done
@@ -111,7 +112,7 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
               onErrorBtnClick && onErrorBtnClick();
               resetForm();
               reset();
-              triggerRef.current?.click();
+              setIsOpenCreateTeamDialog(false);
             }}
           >
             Ok
@@ -123,8 +124,10 @@ const CreateTeamDialog: React.FC<CreateTeamDialog> = ({
 
   return (
     <div>
-      <Dialog defaultOpen={false}>
-        <DialogTrigger className="hidden" ref={triggerRef} />
+      <Dialog
+        open={isOpenCreateTeamDialog}
+        onOpenChange={(newState) => setIsOpenCreateTeamDialog(newState)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           {renderContent()}
         </DialogContent>

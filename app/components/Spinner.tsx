@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"; // only if you use clsx/cn pattern
+import { cn } from "@/lib/utils";
 import React from "react";
 
 interface SpinnerProps {
@@ -12,14 +12,20 @@ const sizeMap = {
   lg: "h-8 w-8",
 };
 
+const spinnerColor = "oklch(0.511 0.262 276.966)";
+
 const Spinner: React.FC<SpinnerProps> = ({ size = "md", className }) => {
   return (
     <div
       className={cn(
-        "animate-spin rounded-full border-2 border-t-transparent border-gray-400",
+        "animate-spin rounded-full border-2 border-t-transparent",
         sizeMap[size],
         className
       )}
+      style={{
+        borderColor: spinnerColor, // base border color
+        borderTopColor: "transparent", // keep top transparent to show spinner effect
+      }}
     />
   );
 };

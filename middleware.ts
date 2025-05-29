@@ -7,10 +7,10 @@ export async function middleware(request: NextRequest) {
 
   // Check if the current path is a protected route
   const isProtectedRoute = [
-    "/fillInData",
-    "/viewInfo",
-    "/profile",
-    "/createOrJoinATeam",
+    "/Main/fillInData",
+    "/Main/viewInfo",
+    "/Main/profile",
+    "/Main/createOrJoinATeam",
   ].some((path) => request.nextUrl.pathname === path);
 
   // For protected routes: redirect to sign-in if no token
@@ -20,9 +20,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  // For public routes: redirect to /viewInfo if authenticated
+  // For public routes: redirect to /Main/viewInfo if authenticated
   if (!isProtectedRoute && token) {
-    return NextResponse.redirect(new URL("/viewInfo", request.url));
+    return NextResponse.redirect(new URL("/Main/viewInfo", request.url));
   }
 
   // Otherwise, continue with the request
